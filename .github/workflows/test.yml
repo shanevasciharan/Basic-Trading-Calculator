@@ -1,0 +1,46 @@
+name: Run ratios script
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run the script
+        run: |
+          python ratios_aapl_msft.py
+
+      - name: Verify outputs exist
+        run: |
+          python - << "PY"
+          import os, sys
+          files = ["metrics.csv", "equity_curves.png"]
+          missing = [f for f in files if not os.path.exists(f)]
+          if missing:
+              print("Missing:", missing); sys.exit(1)
+          print("All good:", files)
+          PY
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: outputs
+          path: |
+            metrics.csv
+            equity_curves.png
